@@ -6,8 +6,8 @@ import sys  # Importa a biblioteca sys para sair do jogo
 pygame.init()
 
 # Configurações da tela
-SCREEN_WIDTH = 1500  # Largura da tela
-SCREEN_HEIGHT = 910  # Altura da tela
+SCREEN_WIDTH = 800  # Largura da tela
+SCREEN_HEIGHT = 400  # Altura da tela
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))  # Cria a tela do jogo
 pygame.display.set_caption("Jogo de Plataforma")  # Define o título da janela do jogo
 
@@ -27,11 +27,11 @@ skate_park_image = pygame.image.load("pista-skate png.png")  # Substitua pelo ca
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.transform.scale(player_image, (125,125))  # Redimensiona a imagem para 80x80 pixels
+        self.image = pygame.transform.scale(player_image, (80, 80))  # Redimensiona a imagem para 80x80 pixels
         self.rect = self.image.get_rect()
         self.rect.x = 50
         self.rect.y = SCREEN_HEIGHT - 100
-        self.jump_speed = -40
+        self.jump_speed = -28
         self.gravity = 1
         self.velocity_y = 0
         self.is_jumping = False
@@ -53,7 +53,7 @@ class Player(pygame.sprite.Sprite):
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.transform.scale(obstacle_image, (100,100))  # Redimensiona a imagem para 70x70 pixels
+        self.image = pygame.transform.scale(obstacle_image, (100, 100))  # Redimensiona a imagem para 100x100 pixels
         self.rect = self.image.get_rect()
         self.rect.x = SCREEN_WIDTH
         self.rect.y = SCREEN_HEIGHT - 100
@@ -88,7 +88,7 @@ def main():
     player = Player()
     obstacles = pygame.sprite.Group()
 
-    for _ in range(3):
+    for _ in range(5):
         obstacle = Obstacle()
         obstacles.add(obstacle)
 
