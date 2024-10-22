@@ -6,8 +6,8 @@ import sys  # Importa a biblioteca sys para sair do jogo
 pygame.init()
 
 # Configurações da tela
-SCREEN_WIDTH = 1500  # Largura da tela
-SCREEN_HEIGHT = 900  # Altura da tela
+SCREEN_WIDTH = 1510  # Largura da tela
+SCREEN_HEIGHT = 910  # Altura da tela
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))  # Cria a tela do jogo
 pygame.display.set_caption("Jogo de Plataforma")  # Define o título da janela do jogo
 
@@ -22,6 +22,23 @@ BLUE = (0, 0, 255)  # Cor azul
 player_image = pygame.image.load("menino_skate.webp")  # Substitua pelo caminho da imagem do menino andando de skate
 obstacle_image = pygame.image.load("hidrante.png")  # Substitua pelo caminho da imagem do hidrante
 skate_park_image = pygame.image.load("pista-skate png.png")  # Substitua pelo caminho da imagem da pista de skate
+background_image = pygame.image.load("imagem cidade.webp")  # Substitua pelo caminho da imagem do plano de fundo
+
+# Função para ler a última pontuação e a melhor pontuação do arquivo
+def read_scores():
+    try:
+        with open("scores.txt", "r") as file:
+            scores = file.readlines()
+            last_score = int(scores[0].strip())
+            best_score = int(scores[1].strip())
+            return last_score, best_score
+    except:
+        return 0, 0
+
+# Função para salvar a última pontuação e a melhor pontuação no arquivo
+def save_scores(last_score, best_score):
+    with open("scores.txt", "w") as file:
+        file.write(f"{last_score}\n{best_score}")
 
 # Classe do Jogador
 class Player(pygame.sprite.Sprite):
@@ -31,7 +48,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 50
         self.rect.y = SCREEN_HEIGHT - 100
-        self.jump_speed = -40
+        self.jump_speed = -30
         self.gravity = 1
         self.velocity_y = 0
         self.is_jumping = False
@@ -51,16 +68,17 @@ class Player(pygame.sprite.Sprite):
 
 # Classe dos Obstáculos
 class Obstacle(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, speed):
         super().__init__()
-        self.image = pygame.transform.scale(obstacle_image, (100, 100))  # Redimensiona a imagem para 70x70 pixels
+        self.image = pygame.transform.scale(obstacle_image, (99, 99))  # Redimensiona a imagem para 70x70 pixels
         self.rect = self.image.get_rect()
         self.rect.x = SCREEN_WIDTH
         self.rect.y = SCREEN_HEIGHT - 100
         self.counted = False  # Adiciona um atributo para contar obstáculos pulados
+        self.speed = speed
 
     def update(self):
-        self.rect.x -= 5
+        self.rect.x -= self.speed
         if self.rect.x < -50:
             self.rect.x = SCREEN_WIDTH + random.randint(0, 100)
             self.counted = False  # Reseta o contador quando o obstáculo é reposicionado
@@ -88,8 +106,17 @@ def main():
     player = Player()
     obstacles = pygame.sprite.Group()
 
-    for _ in range(5):
-        obstacle = Obstacle()
+    initial_speed = 3  
+    speed_increment = 0.01
+    speed = initial_speed
+
+    initial_distance = 200
+    distance_increment = 1
+    distance = initial_distance
+
+    for _ in range(1):
+        obstacle = Obstacle(speed)
+        obstacle.rect.x += _ * distance  # Ajusta a posição inicial dos obstáculos
         obstacles.add(obstacle)
 
     all_sprites = pygame.sprite.Group()
@@ -98,6 +125,7 @@ def main():
 
     start_time = pygame.time.get_ticks()
     obstacles_jumped = 0
+    last_score, best_score = read_scores()
 
     running = True
     while running:
@@ -110,7 +138,7 @@ def main():
 
         all_sprites.update()
 
-        screen.fill(WHITE)
+        screen.blit(background_image, (0, 0))  # Desenha o plano de fundo
         all_sprites.draw(screen)
 
         # Desenhar o botão de voltar
@@ -126,16 +154,36 @@ def main():
         obstacles_text = font.render(f"Obstáculos Pulados: {obstacles_jumped}", True, BLACK)
         screen.blit(obstacles_text, (SCREEN_WIDTH - 300, 50))
 
+        # Mostrar a última pontuação
+        last_score_text = font.render(f"Última Pontuação: {last_score}", True, BLACK)
+        screen.blit(last_score_text, (SCREEN_WIDTH - 300, 90))
+
+        # Mostrar a melhor pontuação
+        best_score_text = font.render(f"Melhor Pontuação: {best_score}", True, BLACK)
+        screen.blit(best_score_text, (SCREEN_WIDTH - 300, 130))
+
         pygame.display.flip()
 
         # Verificar colisão e contar obstáculos pulados
         if pygame.sprite.spritecollideany(player, obstacles):
+            save_scores(obstacles_jumped, max(obstacles_jumped, best_score))
             running = False
         else:
             for obstacle in obstacles:
                 if obstacle.rect.right < player.rect.left and not obstacle.counted:
                     obstacles_jumped += 1
                     obstacle.counted = True
+
+        # Aumentar a velocidade dos obstáculos com o tempo
+        speed += speed_increment
+        for obstacle in obstacles:
+            obstacle.speed = speed
+
+        # Aumentar a distância entre os obstáculos com o tempo
+        distance += distance_increment
+        for i, obstacle in enumerate(obstacles):
+            if obstacle.rect.x < -50:
+                obstacle.rect.x = SCREEN_WIDTH + i * distance
 
         # Verificar se o jogador atingiu 100 pontos
         if obstacles_jumped >= 100:
@@ -147,6 +195,7 @@ def main():
             screen.blit(win_text, (SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 50))
             pygame.display.flip()
             pygame.time.wait(3000)  # Espera 3 segundos antes de fechar
+            save_scores(obstacles_jumped, max(obstacles_jumped, best_score))
             running = False
 
         clock.tick(30)
